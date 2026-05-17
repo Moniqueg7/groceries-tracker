@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DATABASE_SETUP_HINT, isDatabaseConfigured } from "@/lib/db-config";
 import { mergeTop5, type OnlinePriceHit, type PriceSearchResult } from "@/lib/online-prices";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Enter at least 2 characters" }, { status: 400 });
   }
 
+  if (!isDatabaseConfigured()) {
+    return NextResponse.json({ error: DATABASE_SETUP_HINT }, { status: 503 });
+  }
+
   const products = await prisma.product.findMany({
-    where: { name: { contains: q } },
+    where: { name: { contains: q, mode: "insensitive" } },
     select: {
       id: true,
       name: true,

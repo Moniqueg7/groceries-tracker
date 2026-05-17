@@ -1,72 +1,64 @@
-# Deploy to Vercel (mobile app in the browser)
+# Deploy to Vercel
 
-Your app works as a **PWA** on phones — install from Safari/Chrome after deploy.
+## Build (automatic)
 
-## 1. Database (required — Vercel cannot use SQLite)
-
-Use free **[Neon](https://neon.tech)** Postgres:
-
-1. Create a project at neon.tech  
-2. Copy the **connection string** (pooled) → `DATABASE_URL`  
-3. Copy the **direct** connection string → `DIRECT_URL`  
-
-For local dev you can run Postgres with Docker:
+Vercel runs:
 
 ```bash
-docker compose up -d
+npm run vercel-build
 ```
 
-Then copy `.env.example` to `.env` and use the local URLs.
-
-## 2. Push to GitHub
+which is only:
 
 ```bash
-git init
-git add .
-git commit -m "Grocery Budget ZA"
-git remote add origin YOUR_REPO_URL
-git push -u origin main
+prisma generate && next build
 ```
 
-## 3. Import on Vercel
+**No `prisma db push` during build** — schema changes are applied manually (see below).
 
-1. Go to [vercel.com](https://vercel.com) → **Add New Project**  
-2. Import your GitHub repo  
-3. **Environment variables** (Production):
+## 1. Postgres database (required on Vercel)
 
-   | Name | Value |
-   |------|--------|
-   | `DATABASE_URL` | Neon pooled connection string |
-   | `DIRECT_URL` | Neon direct connection string |
-   | `SERPAPI_API_KEY` | *(optional)* for live web prices in **Prices** tab |
+Vercel cannot use SQLite. Use free **[Neon](https://neon.tech)**:
 
-4. Deploy  
+1. Create a project → copy the **connection string** (pooled).
+2. In Vercel: **Project → Settings → Environment Variables**
+3. Add **`DATABASE_URL`** = your Neon URL (Production, Preview, Development).
+4. Redeploy.
 
-## 4. Seed production data (once)
+## 2. Create tables (once, from your PC)
 
-On your PC, with production URLs in `.env`:
+After the first successful deploy, on your computer:
 
 ```bash
+# Use the same DATABASE_URL as Vercel (paste into .env)
 npm install
 npx prisma db push
 npm run db:seed
 ```
 
-Or temporarily set `DATABASE_URL` to Neon in the terminal and run the same commands.
+Or use migrations:
 
-## 5. Use on your phone
+```bash
+npx prisma migrate deploy
+npm run db:seed
+```
 
-1. Open your Vercel URL, e.g. `https://your-app.vercel.app`  
-2. **Add to Home Screen** (iPhone/Android)  
-3. Works like an app — no PC needed after deploy  
+## 3. Push code & deploy
 
-## Features on mobile
+```bash
+git push
+```
 
-- **Prices** tab — search any product, top 5 cheapest stores  
-- **Slip** — scan receipts  
-- **List** — monthly shop list + cheapest store  
-- Dark mode UI  
+Vercel builds automatically. Open your `https://….vercel.app` URL on your phone → **Add to Home Screen**.
 
-## Optional: live web prices
+## Troubleshooting
 
-Add `SERPAPI_API_KEY` on Vercel to blend Google Shopping results into the **Prices** search. Without it, search uses the built-in SA store catalog (Checkers, PnP, Spar, etc.).
+| Problem | Fix |
+|--------|-----|
+| Build fails on `db push` | Ensure `vercel-build` is only `prisma generate && next build` |
+| App loads but APIs error | Set `DATABASE_URL` on Vercel and run `db:push` + `db:seed` once |
+| Works locally, not on Vercel | Local may use SQLite; Vercel needs Postgres `DATABASE_URL` |
+
+## Optional
+
+`SERPAPI_API_KEY` — live web prices in the Search tab.

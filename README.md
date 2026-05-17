@@ -12,11 +12,12 @@ Personal grocery budget assistant for South Africa — dark mode, mobile-friendl
 
 ## Local setup
 
-Requires **PostgreSQL** (Vercel cannot use SQLite).
+Uses **PostgreSQL** (same as Vercel). Easiest: free [Neon](https://neon.tech) URL in `.env`, or Docker:
 
 ```bash
 docker compose up -d
 cp .env.example .env
+# edit DATABASE_URL in .env
 npm install
 npm run db:push
 npm run db:seed
@@ -27,9 +28,13 @@ Open http://localhost:3000
 
 ## Deploy to Vercel (use on phone anywhere)
 
-See **[DEPLOY.md](./DEPLOY.md)** for step-by-step: Neon database, GitHub, Vercel env vars, seed production data.
+See **[DEPLOY.md](./DEPLOY.md)**. Build only runs `prisma generate && next build` (no db push on Vercel).
 
-After deploy, open your `https://….vercel.app` URL on your phone → **Add to Home Screen**.
+1. Add `DATABASE_URL` (Neon Postgres) in Vercel env vars  
+2. Deploy  
+3. Once from your PC: `npx prisma db push` and `npm run db:seed` using the same URL  
+
+After deploy, open your `https://….vercel.app` URL → **Add to Home Screen**.
 
 ## Optional live web prices
 
