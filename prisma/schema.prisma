@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id            String @id @default("default")
+  monthlyBudget Float  @default(5000)
+}
+
+model Store {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  color         String         @default("#16a34a")
+  catalogPrices CatalogPrice[]
+  purchases     Purchase[]
+}
+
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  category      String         @default("General")
+  unit          String         @default("each")
+  catalogPrices CatalogPrice[]
+  purchases     Purchase[]
+  monthlyNeeds  MonthlyNeed[]
+
+  @@index([name])
+}
+
+model CatalogPrice {
+  id        String   @id @default(cuid())
+  productId String
+  storeId   String
+  price     Float
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, storeId])
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  productId String
+  storeId   String
+  quantity  Float    @default(1)
+  unitPrice Float
+  total     Float
+  date      DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([productId])
+}
+
+model MonthlyNeed {
+  id               String  @id @default(cuid())
+  productId        String  @unique
+  quantityPerMonth Float   @default(1)
+  product          Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
