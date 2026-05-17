@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #070b09;
-  --bg-glow: #0d1612;
-  --surface: rgba(18, 28, 24, 0.72);
-  --surface-solid: #141f1b;
-  --border: rgba(52, 211, 153, 0.14);
-  --border-bright: rgba(52, 211, 153, 0.35);
-  --text: #eef6f1;
-  --text-muted: #8fa89a;
-  --accent: #34d399;
-  --accent-bright: #6ee7b7;
-  --accent-dim: #059669;
+  --bg: #07090f;
+  --bg-glow: #0d1219;
+  --surface: rgba(18, 24, 36, 0.72);
+  --surface-solid: #141c28;
+  --border: rgba(59, 130, 246, 0.14);
+  --border-bright: rgba(59, 130, 246, 0.35);
+  --text: #eef4fc;
+  --text-muted: #8fa3bf;
+  --accent: #3b82f6;
+  --accent-bright: #60a5fa;
+  --accent-dim: #2563eb;
   --gold: #fbbf24;
   --gold-dim: #b45309;
   --danger: #fb7185;
   --warn: #fcd34d;
   --radius: 14px;
-  --shadow-glow: 0 0 40px rgba(52, 211, 153, 0.08);
+  --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.08);
 }
 
 html {
@@ -29,8 +29,8 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   background: var(--bg);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.18), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(52, 211, 153, 0.06), transparent),
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.2), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(59, 130, 246, 0.06), transparent),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-glow) 100%);
   background-attachment: fixed;
   color: var(--text);
@@ -45,14 +45,14 @@ body {
 }
 
 .glass-header {
-  background: rgba(10, 15, 13, 0.82);
+  background: rgba(10, 13, 20, 0.82);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .glass-nav {
-  background: rgba(10, 15, 13, 0.92);
+  background: rgba(10, 13, 20, 0.92);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -71,9 +71,9 @@ body {
 }
 
 .card-highlight {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(18, 28, 24, 0.9) 50%);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(18, 24, 36, 0.9) 50%);
   border-color: var(--border-bright);
-  box-shadow: 0 0 24px rgba(52, 211, 153, 0.12);
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.12);
 }
 
 .card-warn {
@@ -164,22 +164,22 @@ body {
 }
 
 .btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #042f1e;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #eff6ff;
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
   font-weight: 700;
   width: 100%;
   min-height: 48px;
   touch-action: manipulation;
-  border: 1px solid rgba(110, 231, 183, 0.35);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .btn:active {
   transform: scale(0.98);
-  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.25);
 }
 
 .btn:disabled {
@@ -200,7 +200,7 @@ body {
 }
 
 .btn-outline:active {
-  background: rgba(52, 211, 153, 0.08);
+  background: rgba(59, 130, 246, 0.1);
   border-color: var(--border-bright);
 }
 
@@ -229,7 +229,7 @@ input[type="search"] {
 .select:focus {
   outline: none;
   border-color: var(--border-bright);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 
 .label {
@@ -245,7 +245,7 @@ input[type="search"] {
 .icon-box {
   padding: 0.625rem;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(16, 185, 129, 0.08));
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.08));
   color: var(--accent-bright);
   border: 1px solid var(--border);
 }
@@ -265,12 +265,12 @@ input[type="search"] {
 .chart-bar {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent-dim));
   border-radius: 6px 6px 0 0;
-  box-shadow: 0 0 12px rgba(52, 211, 153, 0.35);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
 }
 
 .nav-active {
   color: var(--accent-bright) !important;
-  background: rgba(52, 211, 153, 0.12) !important;
+  background: rgba(59, 130, 246, 0.14) !important;
 }
 
 .nav-inactive {

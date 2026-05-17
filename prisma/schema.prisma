@@ -2,10 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Vercel: set DATABASE_URL to a Postgres URL (e.g. Neon) in project settings.
-// Local: Postgres (Docker/Neon) or use file:./dev.db only if provider is sqlite (see README).
+// Provider is synced from DATABASE_URL — see scripts/sync-prisma-provider.mjs
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 

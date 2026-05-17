@@ -19,11 +19,16 @@ export default function SearchPage() {
 
   useEffect(() => {
     fetch("/api/products")
-      .then((r) => r.json())
-      .then((list: { id: string; name: string; category: string }[]) =>
-        setProducts(list.map((p) => ({ id: p.id, name: p.name, category: p.category })))
-      )
-      .catch(() => {});
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          setError(data.error ?? "Could not load product list.");
+          return;
+        }
+        const list = data as { id: string; name: string; category: string }[];
+        setProducts(list.map((p) => ({ id: p.id, name: p.name, category: p.category })));
+      })
+      .catch(() => setError("Could not load product list."));
   }, []);
 
   const suggestions = useMemo(() => {
@@ -48,7 +53,14 @@ export default function SearchPage() {
       const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`, {
         signal: controller.signal,
       });
-      const data = await res.json();
+      let data: PriceSearchResult & { error?: string };
+      try {
+        data = await res.json();
+      } catch {
+        setError(res.ok ? "Invalid response from server." : `Search failed (${res.status}).`);
+        setResult(null);
+        return;
+      }
       if (controller.signal.aborted) return;
       if (!res.ok) {
         setError(data.error ?? "Search failed");
@@ -58,7 +70,7 @@ export default function SearchPage() {
       }
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return;
-      setError("Could not reach the server.");
+      setError("Network error — check your connection and try again.");
       setResult(null);
     } finally {
       if (!controller.signal.aborted) setLoading(false);
@@ -124,7 +136,7 @@ export default function SearchPage() {
                 <li key={p.id}>
                   <button
                     type="button"
-                    className="w-full text-left px-4 py-3 text-sm hover:bg-emerald-500/10 active:bg-emerald-500/20 border-b border-[var(--border)] last:border-0"
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-blue-500/10 active:bg-blue-500/20 border-b border-[var(--border)] last:border-0"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => pickProduct(p.name)}
                   >
@@ -184,7 +196,7 @@ export default function SearchPage() {
                     <li
                       key={`${row.store}-${i}`}
                       className={`flex items-center justify-between gap-2 py-3 px-3 rounded-xl ${
-                        i === 0 ? "bg-emerald-500/15 border border-emerald-500/30" : "bg-black/20"
+                        i === 0 ? "bg-blue-500/15 border border-blue-500/30" : "bg-black/20"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
