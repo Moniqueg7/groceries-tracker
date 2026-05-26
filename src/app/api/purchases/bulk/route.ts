@@ -24,10 +24,14 @@ function matchProduct(
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { storeId, date, items } = body as {
+  const { storeId, date, items, receipt } = body as {
     storeId: string;
     date?: string;
     items: Item[];
+    receipt?: {
+      rawText?: string;
+      photoCount?: number;
+    };
   };
 
   if (!storeId || !items?.length) {
@@ -36,6 +40,14 @@ export async function POST(request: NextRequest) {
 
   const products = await prisma.product.findMany({ select: { id: true, name: true } });
   const purchaseDate = date ? new Date(date) : new Date();
+  const receiptRecord = await prisma.receipt.create({
+    data: {
+      storeId,
+      date: purchaseDate,
+      rawText: receipt?.rawText?.trim() ? receipt.rawText.slice(0, 50_000) : null,
+      photoCount: Math.max(1, Math.min(receipt?.photoCount ?? 1, 20)),
+    },
+  });
   let created = 0;
 
   for (const item of items) {
@@ -53,18 +65,56 @@ export async function POST(request: NextRequest) {
       products.push({ id: createdProduct.id, name: createdProduct.name });
     }
 
-    await prisma.purchase.create({
+    const quantity = item.quantity || 1;
+    const unitPrice = item.unitPrice;
+    const total = item.total || unitPrice * quantity;
+    const purchase = await prisma.purchase.create({
       data: {
         productId,
         storeId,
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice,
-        total: item.total || item.unitPrice * (item.quantity || 1),
+        quantity,
+        unitPrice,
+        total,
         date: purchaseDate,
       },
     });
+
+    await prisma.receiptItem.create({
+      data: {
+        receiptId: receiptRecord.id,
+        productId,
+        purchaseId: purchase.id,
+        name: item.name.trim(),
+        quantity,
+        unitPrice,
+        total,
+      },
+    });
+
+    if (unitPrice > 0) {
+      await prisma.catalogPrice.upsert({
+        where: {
+          productId_storeId: { productId, storeId },
+        },
+        create: {
+          productId,
+          storeId,
+          price: unitPrice,
+          regularPrice: unitPrice,
+          listingName: item.name.trim(),
+        },
+        update: {
+          price: unitPrice,
+          regularPrice: unitPrice,
+          specialPrice: null,
+          specialLabel: null,
+          specialUntil: null,
+          listingName: item.name.trim(),
+        },
+      });
+    }
     created++;
   }
 
-  return NextResponse.json({ created }, { status: 201 });
+  return NextResponse.json({ created, receiptId: receiptRecord.id }, { status: 201 });
 }

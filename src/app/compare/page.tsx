@@ -1,35 +1,24 @@
-import { prisma } from "@/lib/prisma";
-import { ComparePicker } from "./ComparePicker";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function ComparePage() {
-  const products = await prisma.product.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      catalogPrices: { include: { store: true }, orderBy: { price: "asc" } },
-    },
-  });
-
   return (
     <div className="space-y-5">
       <div>
         <h2 className="page-title">Store prices</h2>
-        <p className="page-sub">Checkers, Pick n Pay, Spar, Shoprite, Woolworths & Makro.</p>
+        <p className="page-sub">Only live store data is shown. No seeded or estimated prices.</p>
       </div>
 
-      <ComparePicker
-        products={products.map((p) => ({
-          id: p.id,
-          name: p.name,
-          unit: p.unit,
-          prices: p.catalogPrices.map((c) => ({
-            store: c.store.name,
-            color: c.store.color,
-            price: c.price,
-          })),
-        }))}
-      />
+      <section className="card text-center">
+        <p className="text-sm text-muted">
+          Use live search to compare sourced prices side-by-side. Stores that cannot be fetched show
+          &ldquo;Live price unavailable&rdquo;.
+        </p>
+        <Link href="/search" className="btn block text-center mt-4">
+          Open live price search
+        </Link>
+      </section>
     </div>
   );
 }

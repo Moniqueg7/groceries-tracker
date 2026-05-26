@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma-household"
 }
 
 // Provider is synced from DATABASE_URL — see scripts/sync-prisma-provider.mjs
@@ -19,26 +20,47 @@ model Store {
   color         String         @default("#16a34a")
   catalogPrices CatalogPrice[]
   purchases     Purchase[]
+  receipts      Receipt[]
 }
 
 model Product {
   id            String         @id @default(cuid())
   name          String
+  brand         String?
+  department    String?
   category      String         @default("General")
+  size          String?
   unit          String         @default("each")
+  aliases       String?
+  barcode       String?        @unique
+  image         String?
+  searchTerms   String?
+  updatedAt     DateTime       @updatedAt
   catalogPrices CatalogPrice[]
   purchases     Purchase[]
+  receiptItems  ReceiptItem[]
   monthlyNeeds  MonthlyNeed[]
 
   @@index([name])
+  @@index([brand])
+  @@index([department])
+  @@index([category])
 }
 
 model CatalogPrice {
-  id        String   @id @default(cuid())
-  productId String
-  storeId   String
-  price     Float
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  productId    String
+  storeId      String
+  price        Float
+  specialPrice Float?
+  regularPrice Float?
+  pricePerUnit Float?
+  pricePerUnitUnit String?
+  specialLabel String?
+  specialUntil DateTime?
+  listingName  String?
+  image        String?
+  updatedAt    DateTime  @updatedAt
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
@@ -57,6 +79,37 @@ model Purchase {
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([date])
+  @@index([productId])
+}
+
+model Receipt {
+  id         String        @id @default(cuid())
+  storeId    String
+  date       DateTime      @default(now())
+  rawText    String?
+  photoCount Int           @default(1)
+  createdAt  DateTime      @default(now())
+  store      Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items      ReceiptItem[]
+
+  @@index([storeId])
+  @@index([date])
+}
+
+model ReceiptItem {
+  id         String   @id @default(cuid())
+  receiptId  String
+  productId  String?
+  purchaseId String?
+  name       String
+  quantity   Float    @default(1)
+  unitPrice  Float
+  total      Float
+  createdAt  DateTime @default(now())
+  receipt    Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([receiptId])
   @@index([productId])
 }
 

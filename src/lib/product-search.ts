@@ -1,9 +1,20 @@
 import { isPostgres } from "./db-config";
 
-/** Case-insensitive on Postgres; contains on SQLite. */
-export function productNameFilter(q: string) {
+/** Match product name or searchTerms (aliases like "pepsi", "checkers florets"). */
+export function productSearchWhere(q: string) {
+  const term = q.trim();
+  if (!term) return {};
+
   if (isPostgres()) {
-    return { name: { contains: q, mode: "insensitive" as const } };
+    return {
+      OR: [
+        { name: { contains: term, mode: "insensitive" as const } },
+        { searchTerms: { contains: term, mode: "insensitive" as const } },
+      ],
+    };
   }
-  return { name: { contains: q } };
+
+  return {
+    OR: [{ name: { contains: term } }, { searchTerms: { contains: term } }],
+  };
 }

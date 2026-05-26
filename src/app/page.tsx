@@ -1,13 +1,11 @@
 import { formatZAR } from "@/lib/currency";
-import { getSettings, getPurchases, getCatalog } from "@/lib/data";
+import { getSettings, getPurchases } from "@/lib/data";
 import {
   spendThisMonth,
   spendByStore,
   buyFrequency,
   risingCosts,
-  cheapestStoreForList,
 } from "@/lib/budget";
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { SimpleSpendChart } from "@/components/SimpleSpendChart";
 import { startOfMonth, subMonths, format } from "date-fns";
@@ -15,11 +13,9 @@ import { startOfMonth, subMonths, format } from "date-fns";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, purchases, catalog, monthlyNeeds] = await Promise.all([
+  const [settings, purchases] = await Promise.all([
     getSettings(),
     getPurchases(),
-    getCatalog(),
-    prisma.monthlyNeed.findMany({ include: { product: true } }),
   ]);
 
   const spent = spendThisMonth(purchases);
@@ -31,12 +27,6 @@ export default async function HomePage() {
   );
   const frequent = buyFrequency(purchases);
   const rising = risingCosts(purchases);
-
-  const storeTotals = cheapestStoreForList(
-    monthlyNeeds.map((n) => ({ productId: n.productId, quantity: n.quantityPerMonth })),
-    catalog
-  );
-  const bestStore = storeTotals[0];
 
   const monthlyTotals = Array.from({ length: 6 }, (_, i) => {
     const d = subMonths(new Date(), 5 - i);
@@ -70,20 +60,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {bestStore && monthlyNeeds.length > 0 && (
-        <section className="card card-highlight">
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Best deal</p>
-          <p className="text-lg font-bold mt-1 text-accent-bright">
-            {bestStore.storeName} — {formatZAR(bestStore.total)}
-          </p>
-          <p className="text-xs text-muted mt-1">
-            For {monthlyNeeds.length} items on your monthly list
-          </p>
-          <Link href="/list" className="link text-sm mt-2 inline-block">
-            View list →
-          </Link>
-        </section>
-      )}
+      <section className="card card-highlight">
+        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Live price comparisons</p>
+        <p className="text-sm text-muted mt-2">
+          Prices are only shown when sourced from a live store lookup or fresh cache.
+        </p>
+        <Link href="/search" className="link text-sm mt-2 inline-block">
+          Compare prices →
+        </Link>
+      </section>
 
       <section className="card">
         <h2 className="font-semibold mb-3 tracking-tight">Spending · 6 months</h2>

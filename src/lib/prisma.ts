@@ -1,4 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma-household";
+import { resolveSqliteUrl } from "./resolve-sqlite-url";
+
+resolveSqliteUrl();
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
