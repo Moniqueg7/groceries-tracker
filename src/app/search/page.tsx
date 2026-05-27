@@ -286,7 +286,7 @@ export default function SearchPage() {
                           }
                           return 0;
                         })
-                        .map((row, i) => {
+                        .map((row) => {
                           const isCheapest =
                             row.status === "matched" &&
                             result.rankings?.cheapestOverall?.store === row.store;
