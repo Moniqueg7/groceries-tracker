@@ -1,5 +1,5 @@
 import { formatZAR } from "@/lib/currency";
-import { getSettings, getPurchases } from "@/lib/data";
+import { databaseErrorFromUnknown, getSettings, getPurchases } from "@/lib/data";
 import {
   spendThisMonth,
   spendByStore,
@@ -8,15 +8,24 @@ import {
 } from "@/lib/budget";
 import Link from "next/link";
 import { SimpleSpendChart } from "@/components/SimpleSpendChart";
+import { DatabaseStatus } from "@/components/DatabaseStatus";
 import { startOfMonth, subMonths, format } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, purchases] = await Promise.all([
-    getSettings(),
-    getPurchases(),
-  ]);
+  let settings;
+  let purchases;
+  try {
+    [settings, purchases] = await Promise.all([getSettings(), getPurchases()]);
+  } catch (error) {
+    return (
+      <div className="space-y-4">
+        <h2 className="page-title">Home</h2>
+        <DatabaseStatus error={databaseErrorFromUnknown(error)} />
+      </div>
+    );
+  }
 
   const spent = spendThisMonth(purchases);
   const remaining = settings.monthlyBudget - spent;

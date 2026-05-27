@@ -1,19 +1,33 @@
 import { formatZAR } from "@/lib/currency";
-import { getSettings } from "@/lib/data";
+import { DatabaseError, databaseErrorFromUnknown, getSettings } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import { DatabaseStatus } from "@/components/DatabaseStatus";
 import { ListEditor } from "./ListEditor";
 
 export const dynamic = "force-dynamic";
 
 export default async function ListPage() {
-  const [settings, needs, products] = await Promise.all([
-    getSettings(),
-    prisma.monthlyNeed.findMany({
-      include: { product: true },
-      orderBy: { product: { name: "asc" } },
-    }),
-    prisma.product.findMany({ orderBy: { name: "asc" } }),
-  ]);
+  let settings;
+  let needs;
+  let products;
+  try {
+    [settings, needs, products] = await Promise.all([
+      getSettings(),
+      prisma.monthlyNeed.findMany({
+        include: { product: true },
+        orderBy: { product: { name: "asc" } },
+      }),
+      prisma.product.findMany({ orderBy: { name: "asc" } }),
+    ]);
+  } catch (error) {
+    const dbError = error instanceof DatabaseError ? error : databaseErrorFromUnknown(error);
+    return (
+      <div className="space-y-4">
+        <h2 className="page-title">Monthly list</h2>
+        <DatabaseStatus error={dbError} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

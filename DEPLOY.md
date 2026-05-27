@@ -1,64 +1,68 @@
 # Deploy to Vercel
 
-## Build (automatic)
+## Why Postgres is required
 
-Vercel runs:
+Vercel runs **serverless** functions with a **read-only filesystem**. SQLite (`file:./dev.db`) only works on your PC. Production must use **Neon** or **Supabase Postgres**.
+
+## 1. Create Postgres (Neon recommended)
+
+1. Sign up at [neon.tech](https://neon.tech) (or [supabase.com](https://supabase.com))
+2. Create a project
+3. Copy the **pooled** connection string (`postgresql://…?sslmode=require`)
+
+## 2. Vercel environment variables
+
+In **Vercel → Project → Settings → Environment Variables**, add:
+
+| Variable | Value |
+|----------|--------|
+| `DATABASE_URL` | Your Postgres connection string (Production + Preview) |
+
+Redeploy after saving.
+
+## 3. Build (automatic)
 
 ```bash
 npm run vercel-build
 ```
 
-which is only:
+This runs:
+
+1. `sync-prisma-provider` — forces **postgresql** on Vercel
+2. `verify-vercel-database` — fails build if `DATABASE_URL` is SQLite on Vercel
+3. `prisma generate` — generates client into `src/generated/prisma-household`
+4. `next build`
+
+No `db push` during build — apply schema separately (step 4).
+
+## 4. Create tables (once, from your PC)
+
+Paste the **same** `DATABASE_URL` into your local `.env`, then:
 
 ```bash
-prisma generate && next build
-```
-
-**No `prisma db push` during build** — schema changes are applied manually (see below).
-
-## 1. Postgres database (required on Vercel)
-
-Vercel cannot use SQLite. Use free **[Neon](https://neon.tech)**:
-
-1. Create a project → copy the **connection string** (pooled).
-2. In Vercel: **Project → Settings → Environment Variables**
-3. Add **`DATABASE_URL`** = your Neon URL (Production, Preview, Development).
-4. Redeploy.
-
-## 2. Create tables (once, from your PC)
-
-After the first successful deploy, on your computer:
-
-```bash
-# Use the same DATABASE_URL as Vercel (paste into .env)
 npm install
-npx prisma db push
+npm run db:migrate
 npm run db:seed
 ```
 
-Or use migrations:
+`db:migrate` runs `prisma migrate deploy` against your production database.
 
-```bash
-npx prisma migrate deploy
-npm run db:seed
-```
-
-## 3. Push code & deploy
+## 5. Push code
 
 ```bash
 git push
 ```
 
-Vercel builds automatically. Open your `https://….vercel.app` URL on your phone → **Add to Home Screen**.
+## Verify
+
+- Open `https://your-app.vercel.app/api/health` — should return `{ "ok": true, "database": true }`
+- Homepage should load without `PrismaClientInitializationError`
 
 ## Troubleshooting
 
 | Problem | Fix |
 |--------|-----|
-| Build fails on `db push` | Ensure `vercel-build` is only `prisma generate && next build` |
-| App loads but APIs error | Set `DATABASE_URL` on Vercel and run `db:push` + `db:seed` once |
-| Works locally, not on Vercel | Local may use SQLite; Vercel needs Postgres `DATABASE_URL` |
-
-## Optional
-
-`SERPAPI_API_KEY` — live web prices in the Search tab.
+| `PrismaClientInitializationError` | Set `DATABASE_URL` to Postgres on Vercel, redeploy |
+| Build fails on SQLite URL | Remove `file:` URLs from Vercel env; use Neon/Supabase |
+| App loads, empty data | Run `npm run db:migrate` and `npm run db:seed` with production URL |
+| Works locally, not Vercel | Local uses SQLite; production needs Postgres |

@@ -15,21 +15,6 @@ export type OcrTextLine = {
   confidence: number;
 };
 
-export type ReceiptParseStep =
-  | "OCR raw text received"
-  | "receipt cleanup"
-  | "item extraction start"
-  | "line splitting"
-  | "regex parsing"
-  | "filtering totals/tax/savings lines"
-  | "item array creation"
-  | "complete";
-
-export type ReceiptParseOptions = {
-  timeoutMs?: number;
-  onStep?: (step: ReceiptParseStep, meta?: Record<string, unknown>) => void;
-};
-
 export function parsePrice(text: string): number | null {
   const match = text.replace(/,/g, ".").match(/\d+\.?\d*/);
   if (!match) return null;
@@ -329,99 +314,5 @@ export function parseReceiptText(ocrText: string, ocrLines?: OcrTextLine[]): Par
     }
   }
 
-  return items.slice(0, 200);
-}
-
-function timeoutError(step: ReceiptParseStep) {
-  return new Error(`Parser timed out during: ${step}`);
-}
-
-function sleep() {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-export async function parseReceiptTextAsync(
-  ocrText: string,
-  ocrLines?: OcrTextLine[],
-  options: ReceiptParseOptions = {}
-): Promise<ParsedLine[]> {
-  const startedAt = performance.now();
-  const timeoutMs = options.timeoutMs ?? 15_000;
-  let lastStep: ReceiptParseStep = "OCR raw text received";
-
-  const step = (name: ReceiptParseStep, meta?: Record<string, unknown>) => {
-    lastStep = name;
-    options.onStep?.(name, { ...meta, elapsedMs: Math.round(performance.now() - startedAt) });
-  };
-
-  const assertTime = () => {
-    if (performance.now() - startedAt > timeoutMs) throw timeoutError(lastStep);
-  };
-
-  step("OCR raw text received", {
-    chars: ocrText.length,
-    ocrLines: ocrLines?.length ?? 0,
-  });
-
-  step("receipt cleanup");
-  const hasLineConfidence = Boolean(ocrLines?.length);
-
-  step("line splitting");
-  const sourceLines = (ocrLines?.length
-    ? ocrLines
-    : ocrText.split(/\r?\n/).map((text) => ({ text, confidence: 0 }))
-  ).slice(0, 160);
-
-  const lines = sourceLines
-    .map((line) => ({
-      text: line.text.trim().slice(0, 180),
-      confidence: Math.max(0, Math.min(100, Math.round(line.confidence))),
-    }))
-    .filter((line) => line.text);
-
-  step("item extraction start", { lines: lines.length });
-  const items: ParsedLine[] = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    assertTime();
-    if (index > 0 && index % 20 === 0) await sleep();
-
-    const line = lines[index];
-    step("filtering totals/tax/savings lines", { index, text: line.text });
-    if (isSectionStop(line.text)) {
-      continue;
-    }
-    if (hasLineConfidence && line.confidence < 50) continue;
-    if (hasBlacklistedText(line.text)) continue;
-    if (hasTaxPattern(line.text)) continue;
-    if (isGarbageLine(line.text)) continue;
-    if (countNumberGroups(line.text) > 2 && !hasQuantityPattern(line.text)) continue;
-    if (countPriceValues(line.text) > 1 && !hasQuantityPattern(line.text)) continue;
-
-    step("regex parsing", { index });
-    const priceEnd = line.text.match(/^(.+?)\s+R?\s*(\d+[.,]\d{2})\s*$/i);
-    if (!priceEnd) continue;
-
-    const name = cleanupName(priceEnd[1].trim());
-    const total = parsePrice(priceEnd[2]);
-    const score = productScore(line.text, name);
-    if (name.length > 2 && total && score >= 3) {
-      const { quantity, unitPrice } = quantityFrom(line.text, total);
-      step("item array creation", { index, name, score });
-      items.push({
-        raw: line.text,
-        cleaned: name,
-        name: name.slice(0, 100),
-        quantity,
-        unitPrice,
-        total,
-        confidence: line.confidence,
-        needsReview: line.confidence > 0 && line.confidence < 50,
-        score,
-      });
-    }
-  }
-
-  step("complete", { items: items.length });
   return items.slice(0, 200);
 }

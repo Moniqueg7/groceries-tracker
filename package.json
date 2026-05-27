@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/sync-prisma-provider.mjs && prisma generate && next build",
-    "vercel-build": "node scripts/sync-prisma-provider.mjs && prisma generate && next build",
+    "vercel-build": "node scripts/sync-prisma-provider.mjs && node scripts/verify-vercel-database.mjs && prisma generate && next build",
     "start": "next start --hostname 0.0.0.0",
     "lint": "next lint",
     "db:push": "node scripts/sync-prisma-provider.mjs && prisma db push",
     "db:migrate-local": "tsx scripts/apply-schema-updates.mjs",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "node scripts/sync-prisma-provider.mjs && prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "products:import": "node scripts/import-products.mjs",
     "postinstall": "node scripts/sync-prisma-provider.mjs && prisma generate"

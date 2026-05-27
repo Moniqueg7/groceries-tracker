@@ -3,9 +3,9 @@ generator client {
   output   = "../src/generated/prisma-household"
 }
 
-// Provider is synced from DATABASE_URL — see scripts/sync-prisma-provider.mjs
+// Production default: postgresql. Local SQLite uses DATABASE_URL="file:./dev.db" (see scripts/sync-prisma-provider.mjs).
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

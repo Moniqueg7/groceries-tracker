@@ -5,11 +5,23 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const schemaPath = resolve(__dirname, "../prisma/schema.prisma");
 const url = (process.env.DATABASE_URL ?? "").trim();
+const onVercel = process.env.VERCEL === "1";
+const isPostgresUrl = url.startsWith("postgres://") || url.startsWith("postgresql://");
+const isSqliteUrl = url.startsWith("file:");
 
-const provider =
-  process.env.VERCEL === "1" || url.startsWith("postgres://") || url.startsWith("postgresql://")
-    ? "postgresql"
-    : "sqlite";
+/** Production (Vercel) and Postgres URLs always use postgresql. SQLite is local-only. */
+let provider = "postgresql";
+if (!onVercel && isSqliteUrl) {
+  provider = "sqlite";
+} else if (!onVercel && !url) {
+  provider = "sqlite";
+}
+
+if (onVercel && isSqliteUrl) {
+  console.error(
+    "[prisma] SQLite DATABASE_URL cannot run on Vercel. Set a Neon/Supabase Postgres DATABASE_URL in Vercel env vars."
+  );
+}
 
 let schema = readFileSync(schemaPath, "utf8");
 const next = schema.replace(/provider\s*=\s*"(postgresql|sqlite)"/, `provider = "${provider}"`);
@@ -20,3 +32,5 @@ if (next !== schema) {
 } else if (!schema.includes(`provider = "${provider}"`)) {
   console.warn(`[prisma] could not set provider to ${provider}`);
 }
+
+export { provider, onVercel, isPostgresUrl, isSqliteUrl };
