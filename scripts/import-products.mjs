@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { PrismaClient } from "../src/generated/prisma-household/index.js";
-import { resolveSqliteUrl } from "../src/lib/resolve-sqlite-url.ts";
 
-resolveSqliteUrl();
 const prisma = new PrismaClient();
 
 const file = process.argv[2];

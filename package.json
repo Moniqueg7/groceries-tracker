@@ -9,9 +9,9 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "next lint",
     "db:push": "node scripts/sync-prisma-provider.mjs && prisma db push",
-    "db:migrate-local": "tsx scripts/apply-schema-updates.mjs",
     "db:migrate": "node scripts/sync-prisma-provider.mjs && prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node scripts/sync-prisma-provider.mjs && tsx prisma/seed.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed",
     "products:import": "node scripts/import-products.mjs",
     "postinstall": "node scripts/sync-prisma-provider.mjs && prisma generate"
   },

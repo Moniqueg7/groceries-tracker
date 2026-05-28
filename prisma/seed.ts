@@ -1,8 +1,6 @@
 import { PrismaClient } from "../src/generated/prisma-household";
-import { resolveSqliteUrl } from "../src/lib/resolve-sqlite-url";
 import { CATALOG_PRODUCTS, parseStorePrice } from "./products-catalog";
 
-resolveSqliteUrl();
 const prisma = new PrismaClient();
 
 const STORES = [

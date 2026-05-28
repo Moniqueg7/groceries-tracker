@@ -1,53 +1,47 @@
 # Deploy to Vercel
 
-## Why Postgres is required
+## Database: PostgreSQL only (Neon)
 
-Vercel runs **serverless** functions with a **read-only filesystem**. SQLite (`file:./dev.db`) only works on your PC. Production must use **Neon** or **Supabase Postgres**.
+This project uses **PostgreSQL** for local development and production. SQLite is not supported.
 
-## 1. Create Postgres (Neon recommended)
+### 1. Create Neon Postgres
 
-1. Sign up at [neon.tech](https://neon.tech) (or [supabase.com](https://supabase.com))
+1. Sign up at [neon.tech](https://neon.tech)
 2. Create a project
 3. Copy the **pooled** connection string (`postgresql://…?sslmode=require`)
 
-## 2. Vercel environment variables
+### 2. Environment variables
 
-In **Vercel → Project → Settings → Environment Variables**, add:
+**Local:** copy `.env.example` to `.env` and paste your Neon `DATABASE_URL`.
+
+**Vercel:** Project → Settings → Environment Variables:
 
 | Variable | Value |
 |----------|--------|
-| `DATABASE_URL` | Your Postgres connection string (Production + Preview) |
+| `DATABASE_URL` | Same Neon Postgres URL (Production + Preview) |
 
 Redeploy after saving.
 
-## 3. Build (automatic)
+### 3. Apply schema and seed (once per database)
+
+From your PC, with the Neon URL in `.env`:
+
+```bash
+npm install
+npm run db:setup
+```
+
+This runs `prisma migrate deploy` then seeds stores and catalog products.
+
+### 4. Build on Vercel (automatic)
 
 ```bash
 npm run vercel-build
 ```
 
-This runs:
+Runs provider check, `verify-vercel-database`, `prisma generate`, and `next build`. Schema is applied via `db:migrate` (step 3), not during the Vercel build.
 
-1. `sync-prisma-provider` — forces **postgresql** on Vercel
-2. `verify-vercel-database` — fails build if `DATABASE_URL` is SQLite on Vercel
-3. `prisma generate` — generates client into `src/generated/prisma-household`
-4. `next build`
-
-No `db push` during build — apply schema separately (step 4).
-
-## 4. Create tables (once, from your PC)
-
-Paste the **same** `DATABASE_URL` into your local `.env`, then:
-
-```bash
-npm install
-npm run db:migrate
-npm run db:seed
-```
-
-`db:migrate` runs `prisma migrate deploy` against your production database.
-
-## 5. Push code
+### 5. Push code
 
 ```bash
 git push
@@ -55,14 +49,19 @@ git push
 
 ## Verify
 
-- Open `https://your-app.vercel.app/api/health` — should return `{ "ok": true, "database": true }`
-- Homepage should load without `PrismaClientInitializationError`
+- `https://your-app.vercel.app/api/health` → `{ "ok": true, "database": true }`
+- Homepage loads without `PrismaClientInitializationError`
 
 ## Troubleshooting
 
 | Problem | Fix |
 |--------|-----|
-| `PrismaClientInitializationError` | Set `DATABASE_URL` to Postgres on Vercel, redeploy |
-| Build fails on SQLite URL | Remove `file:` URLs from Vercel env; use Neon/Supabase |
-| App loads, empty data | Run `npm run db:migrate` and `npm run db:seed` with production URL |
-| Works locally, not Vercel | Local uses SQLite; production needs Postgres |
+| `P3019` sqlite does not match postgresql | Ensure `prisma/schema.prisma` has `provider = "postgresql"` and `migration_lock.toml` says `postgresql`. Do not use `file:` URLs. Run `npm run db:migrate` with a Postgres `DATABASE_URL`. |
+| `PrismaClientInitializationError` | Set Postgres `DATABASE_URL` on Vercel, redeploy |
+| Build fails on SQLite URL | Remove `file:./dev.db` from Vercel env; use Neon URL |
+| App loads, empty data | Run `npm run db:setup` with production `DATABASE_URL` |
+| Migrate fails on existing broken DB | In Neon console, reset the branch or drop schema `public` and re-run `npm run db:setup` |
+
+## Migration history
+
+A single baseline migration lives in `prisma/migrations/20260327120000_init/`. If you previously applied SQLite migrations to Neon, reset the Neon database before running `db:migrate`.

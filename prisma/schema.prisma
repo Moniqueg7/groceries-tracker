@@ -3,7 +3,7 @@ generator client {
   output   = "../src/generated/prisma-household"
 }
 
-// Production default: postgresql. Local SQLite uses DATABASE_URL="file:./dev.db" (see scripts/sync-prisma-provider.mjs).
+// PostgreSQL only (Neon recommended). Set DATABASE_URL in .env — see .env.example and DEPLOY.md.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
