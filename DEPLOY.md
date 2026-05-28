@@ -8,17 +8,26 @@ This project uses **PostgreSQL** for local development and production. SQLite is
 
 1. Sign up at [neon.tech](https://neon.tech)
 2. Create a project
-3. Copy the **pooled** connection string (`postgresql://…?sslmode=require`)
+3. In **Connect**, copy **both** strings:
+   - **Pooled** → `DATABASE_URL` (has `-pooler` in the host)
+   - **Direct** → `DIRECT_URL` (no `-pooler`; required for `prisma migrate`)
 
 ### 2. Environment variables
 
-**Local:** copy `.env.example` to `.env` and paste your Neon `DATABASE_URL`.
-
-**Vercel:** Project → Settings → Environment Variables:
+**Local `.env`:**
 
 | Variable | Value |
 |----------|--------|
-| `DATABASE_URL` | Same Neon Postgres URL (Production + Preview) |
+| `DATABASE_URL` | Neon **pooled** connection string |
+| `DIRECT_URL` | Neon **direct** connection string |
+
+**Vercel** (Project → Settings → Environment Variables):
+
+| Variable | Value |
+|----------|--------|
+| `DATABASE_URL` | Neon **pooled** URL (Production + Preview) |
+
+`DIRECT_URL` is only needed on your PC when running `npm run db:migrate` / `db:setup`.
 
 Redeploy after saving.
 
@@ -56,7 +65,8 @@ git push
 
 | Problem | Fix |
 |--------|-----|
-| `P3019` sqlite does not match postgresql | Ensure `prisma/schema.prisma` has `provider = "postgresql"` and `migration_lock.toml` says `postgresql`. Do not use `file:` URLs. Run `npm run db:migrate` with a Postgres `DATABASE_URL`. |
+| `P1001` Can't reach database server (pooler host) | Add `DIRECT_URL` with Neon's **direct** string (no `-pooler`). Wake the project in the Neon console if it was idle. |
+| `P3019` sqlite does not match postgresql | Ensure `prisma/schema.prisma` has `provider = "postgresql"` and `migration_lock.toml` says `postgresql`. Do not use `file:` URLs. Run `npm run db:migrate` with Postgres URLs. |
 | `PrismaClientInitializationError` | Set Postgres `DATABASE_URL` on Vercel, redeploy |
 | Build fails on SQLite URL | Remove `file:./dev.db` from Vercel env; use Neon URL |
 | App loads, empty data | Run `npm run db:setup` with production `DATABASE_URL` |
@@ -64,4 +74,6 @@ git push
 
 ## Migration history
 
-A single baseline migration lives in `prisma/migrations/20260327120000_init/`. If you previously applied SQLite migrations to Neon, reset the Neon database before running `db:migrate`.
+Baseline migration: `prisma/migrations/20260527140000_init/`. Regenerate with `node scripts/create-init-migration.mjs` (writes UTF-8 without BOM).
+
+If a migration fails with `syntax error at or near ""` / `\u{feff}`, the SQL file had a UTF-8 BOM — recreate the migration with the script above.

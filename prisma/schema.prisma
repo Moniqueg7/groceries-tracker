@@ -3,10 +3,11 @@ generator client {
   output   = "../src/generated/prisma-household"
 }
 
-// PostgreSQL only (Neon recommended). Set DATABASE_URL in .env — see .env.example and DEPLOY.md.
+// DATABASE_URL = pooled (app + Vercel). DIRECT_URL = direct (Prisma migrate) — see .env.example.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Settings {
